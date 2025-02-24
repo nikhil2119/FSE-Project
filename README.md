@@ -20,8 +20,24 @@ To install the project, follow these steps:
 1. Clone the repository:
    ```sh
    git clone https://github.com/nikhil2119/BEE-Project.git
+   cd BEE-Project
+   
+   ```
 
-2. Install Packages:
+2. Install Packages for backend:
+   ```sh
+   cd backend
    npm i
+   ```
 
-3. npm start
+3. Start the development server:
+   ```sh
+   npm start
+   ```
+
+   or
+   ```sh
+   node --watch index.js
+   ```
+
+
