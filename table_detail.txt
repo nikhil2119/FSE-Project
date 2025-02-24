@@ -1,0 +1,126 @@
+Table Master_category {
+  id int [primary key, increment]
+  cate_name varchar(255)
+  cate_desc text
+  is_enabled boolean [default: true]  // Category active or not
+  created_on timestamp
+  created_by int [ref: > Users.id]
+}
+
+Table Master_SubCat {
+  id int [primary key, increment]
+  cate_id int [not null, ref: > Master_category.id]
+  sub_cate_name varchar(255)
+  sub_cate_desc text
+  is_enabled boolean [default: true]  // Subcategory active or not
+  created_on timestamp
+}
+
+Table Master_products {
+  id int [primary key, increment]
+  cate_id int [not null, ref: > Master_category.id]
+  sub_cate_id int [not null, ref: > Master_SubCat.id]
+  prod_name varchar(255)
+  prod_price int
+  prod_desc text
+  stock int
+  is_enabled boolean [default: true]  // Product available or not
+  created_on timestamp
+  created_by int [ref: > Users.id]
+}
+
+Table Product_images {
+  id int [primary key, increment]
+  product_id int [not null, ref: > Master_products.id]
+  image_path varchar(255)
+  created_on timestamp
+}
+
+Table Prod_reviews {
+  id int [primary key, increment]
+  product_id int [not null, ref: > Master_products.id]
+  user_id int [not null, ref: > Users.id]
+  rating int [note: "Rating from 1-5"]
+  review_text text
+  created_on timestamp
+}
+
+Table Users {
+  id int [primary key, increment]
+  user_name varchar(255)
+  user_email varchar(255) [unique]
+  user_pwd varchar(255)
+  user_age int
+  phone varchar(20)
+  is_enabled boolean [default: true]  // User account active or disabled
+  created_on timestamp
+}
+
+Table User_address {
+  id int [primary key, increment]
+  user_id int [not null, ref: > Users.id]
+  primary_addr varchar(255)
+  pin_code char(6)
+  city_id int [not null, ref: > Master_city.id]
+  state_id int [not null, ref: > Master_state.id]
+  is_enabled boolean [default: true]  // Address valid or removed
+  created_on timestamp
+}
+
+Table Master_city {
+  id int [primary key, increment]
+  state_id int [not null, ref: > Master_state.id]
+  city varchar(255)
+  is_enabled boolean [default: true]  // City availability
+  created_on timestamp
+}
+
+Table Master_state {
+  id int [primary key, increment]
+  state_name varchar(255)
+  country varchar(255) [default: "India"]
+  is_enabled boolean [default: true]  // State availability
+  created_on timestamp
+}
+
+Table Orders {
+  id int [primary key, increment]
+  user_id int [not null, ref: > Users.id]
+  total_price decimal(10,2)
+  status enum("Pending", "Shipped", "Delivered", "Cancelled") [default: "Pending"]
+  created_on timestamp
+}
+
+Table Order_Items {
+  id int [primary key, increment]
+  order_id int [not null, ref: > Orders.id]
+  product_id int [not null, ref: > Master_products.id]
+  quantity int
+  price decimal(10,2)
+}
+
+Table Payments {
+  id int [primary key, increment]
+  order_id int [not null, ref: > Orders.id]
+  user_id int [not null, ref: > Users.id]
+  payment_method enum("Credit Card", "Debit Card", "PayPal", "COD") [default: "COD"]
+  status enum("Pending", "Completed", "Failed") [default: "Pending"]
+  created_on timestamp
+}
+
+Table Cart {
+  id int [primary key, increment]
+  user_id int [not null, ref: > Users.id]
+  product_id int [not null, ref: > Master_products.id]
+  quantity int [default: 1]
+  added_on timestamp
+}
+
+Table Admins {
+  id int [primary key, increment]
+  name varchar(100)
+  email varchar(100) [unique]
+  password varchar(255)
+  is_enabled boolean [default: true]  // Admin active or revoked
+  created_on timestamp
+}
