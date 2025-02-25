@@ -25,23 +25,6 @@ const getUserById = async (req, res) => {
     }
 };
 
-// Create user
-const createUser = async (req, res) => {
-    try {
-        const { user_name, user_email, user_pwd, user_age, phone } = req.body;
-        const date = new Date();
-        const created_on = date.toISOString().slice(0, 19).replace('T', ' ');
-
-        const [result] = await db.query(
-            'INSERT INTO Users (user_name, user_email, user_pwd, user_age, phone, created_on) VALUES (?, ?, ?, ?, ?, ?)',
-            [user_name, user_email, user_pwd, user_age, phone, created_on]
-        );
-
-        res.status(201).json({ id: result.insertId, message: 'User created successfully' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
 
 // Update user
 const updateUser = async (req, res) => {
@@ -82,9 +65,8 @@ const deleteUser = async (req, res) => {
 };
 
 module.exports = {
-    getAllUsers,
-    getUserById,
-    createUser,
-    updateUser,
-    deleteUser
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
 };

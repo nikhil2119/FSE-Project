@@ -8,7 +8,8 @@ dotenv.config();
 
 //routes
 const userRoutes = require('./routes/userroutes');
-
+const categoryRoutes = require('./routes/categoryRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 //middleware
 app.use(express.json());
@@ -17,12 +18,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 //routes
 app.get('/', (req, res) => {
-    res.send('<h1 style="text-align: center;"> HomePage </h1>');
+    res.sendFile(__dirname + '/public/index.html');
 });
 
-
 app.use('/api/users', userRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/auth', authRoutes);
 
+//listen port
 app.listen(process.env.PORT, () => {
     console.log(`Running on: http://localhost:${process.env.PORT}`);
 });
