@@ -1,4 +1,4 @@
-# BEE-Project
+# FSE Project
 
 This is our E-Commerce Project.
 
