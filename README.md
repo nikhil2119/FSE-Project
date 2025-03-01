@@ -1,4 +1,4 @@
-# BEE-Project
+# FSE Project
 
 This is our E-Commerce Project.
 
@@ -19,8 +19,8 @@ To install the project, follow these steps:
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/nikhil2119/BEE-Project.git
-   cd BEE-Project
+   git clone https://github.com/nikhil2119/FSE-Project.git
+   cd FSE-Project
    
    ```
 
