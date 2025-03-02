@@ -1,33 +1,58 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const app = express();
 
 const dotenv = require('dotenv');
 dotenv.config();
 
-
-//routes
-const userRoutes = require('./routes/userroutes');
+// Import routes
+const userRoutes = require('./routes/userRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const authRoutes = require('./routes/authRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 
-//middleware
+// Middleware
+app.use(cors()); // Enable CORS for all routes
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-//routes
+// Serve static files
+app.use(express.static('public'));
+
+// Basic route
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/index.html');
 });
 
+// API Routes with /api prefix
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/cart', cartRoutes);
 
-//listen port
-app.listen(process.env.PORT, () => {
-    console.log(`Running on: http://localhost:${process.env.PORT}`);
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+        success: false,
+        message: 'Something went wrong!',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
+// Handle 404 routes
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found'
+    });
+});
 
+// Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`Server is running on: http://localhost:${PORT}`);
+    console.log('Press Ctrl + C to stop the server');
+});
