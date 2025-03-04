@@ -5,6 +5,10 @@ const getAllCategories = async (req, res) => {
     const [categories] = await db.query(
       "SELECT id, cate_name, cate_desc, created_on, created_by FROM master_category"
     );
+
+    if (categories.length === 0) {
+      return res.status(404).json({ message: "No categories found" });
+    }
     res.status(200).json(categories);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -33,6 +37,12 @@ const getCategoryById = async (req, res) => {
 const createCategory = async (req, res) => {
   try {
     const { cate_name, cate_desc } = req.body;
+
+    // Validate required fields
+    if (!cate_name || !cate_desc) {
+      return res.status(400).json({ message: "Category name and description are required" });
+    }
+
     const date = new Date();
     const created_on = date.toISOString().slice(0, 19).replace("T", " ");
 
@@ -41,9 +51,16 @@ const createCategory = async (req, res) => {
       [cate_name, cate_desc, created_on]
     );
 
-    res
-      .status(201)
-      .json({ id: result.insertId, message: "Category created successfully" });
+    res.status(201).json({ 
+      id: result.insertId, 
+      message: "Category created successfully",
+      category: {
+        id: result.insertId,
+        cate_name,
+        cate_desc,
+        created_on
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -51,22 +68,58 @@ const createCategory = async (req, res) => {
 
 //update category
 const updateCategory = async (req, res) => {
-  const { cate_name, cate_desc } = req.body;
-  const { id } = req.params;
-  const [result] = await db.query(
-    "UPDATE master_category SET cate_name = ?, cate_desc = ? WHERE id = ?",
-    [cate_name, cate_desc, id]
-  );
-  res.status(200).json({ message: "Category updated successfully", result });
+  try {
+    const { cate_name, cate_desc } = req.body;
+    const { id } = req.params;
+
+    // Validate required fields
+    if (!cate_name || !cate_desc) {
+      return res.status(400).json({ message: "Category name and description are required" });
+    }
+
+    // Check if category exists
+    const [existing] = await db.query("SELECT id FROM master_category WHERE id = ?", [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    const [result] = await db.query(
+      "UPDATE master_category SET cate_name = ?, cate_desc = ? WHERE id = ?",
+      [cate_name, cate_desc, id]
+    );
+
+    res.status(200).json({ 
+      message: "Category updated successfully",
+      category: {
+        id,
+        cate_name,
+        cate_desc
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 //delete category
 const deleteCategory = async (req, res) => {
-  const { id } = req.params;
-  const [result] = await db.query("DELETE FROM master_category WHERE id = ?", [
-    id,
-  ]);
-  res.status(200).json({ message: "Category deleted successfully", result });
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: "Category ID is required" });
+    }
+
+    const [result] = await db.query("DELETE FROM master_category WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    res.status(200).json({ message: "Category deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 module.exports = {
