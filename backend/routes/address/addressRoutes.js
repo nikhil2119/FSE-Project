@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const addressController = require('../../controllers/address/addressController');
-const { authMiddleware } = require('../middleware/authMiddleware');
-const roleMiddleware = require('../middleware/roleMiddleware');
+const { authMiddleware } = require('../../middleware/authMiddleware');
+const roleMiddleware = require('../../middleware/roleMiddleware');
 
 // Protected routes
 router.get('/', authMiddleware, addressController.getAllAddress);

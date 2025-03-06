@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const stateController = require('../../controllers/address/stateController');
-const { authMiddleware } = require('../middleware/authMiddleware');
-const roleMiddleware = require('../middleware/roleMiddleware');
+const { authMiddleware } = require('../../middleware/authMiddleware');
+const roleMiddleware = require('../../middleware/roleMiddleware');
 
 //routes
 router.get('/', stateController.getAllStates);

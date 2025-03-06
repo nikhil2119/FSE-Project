@@ -100,13 +100,14 @@ CREATE TABLE `Order_Items` (
 );
 
 CREATE TABLE `Payments` (
-  `id` int PRIMARY KEY AUTO_INCREMENT,
-  `order_id` int NOT NULL,
-  `user_id` int NOT NULL,
-  `payment_method` enum(Credit Card,Debit Card,PayPal,COD) DEFAULT 'COD',
-  `status` enum(Pending,Completed,Failed) DEFAULT 'Pending',
-  `created_on` timestamp
+  `id` INT PRIMARY KEY AUTO_INCREMENT,
+  `order_id` INT NOT NULL,
+  `user_id` INT NOT NULL,
+  `payment_method` ENUM('Credit Card', 'Debit Card', 'PayPal', 'COD') DEFAULT 'COD',
+  `status` ENUM('Pending', 'Completed', 'Failed') DEFAULT 'Pending',
+  `created_on` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 CREATE TABLE `Cart` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
@@ -124,6 +125,20 @@ CREATE TABLE `Admins` (
   `is_enabled` boolean DEFAULT true,
   `created_on` timestamp
 );
+
+CREATE TABLE `Discounts` (
+    `id` INT PRIMARY KEY AUTO_INCREMENT,
+    `code` VARCHAR(50) UNIQUE NOT NULL,
+    `description` TEXT,
+    `discount_type` ENUM('percentage', 'fixed') NOT NULL,
+    `discount_value` DECIMAL(10,2) NOT NULL CHECK (`discount_value` > 0),
+    `start_date` TIMESTAMP NOT NULL,
+    `end_date` TIMESTAMP NOT NULL CHECK (`end_date` > `start_date`),
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `created_by` INT NOT NULL,
+    `created_on` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 ALTER TABLE `Master_category` ADD FOREIGN KEY (`created_by`) REFERENCES `Users` (`id`);
 
