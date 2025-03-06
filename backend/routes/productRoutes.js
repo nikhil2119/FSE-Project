@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const productController = require("../controllers/productController");
+const { authMiddleware } = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware');
 
 // Get all products
 router.get("/", productController.getAllProducts);
@@ -8,14 +10,14 @@ router.get("/", productController.getAllProducts);
 // Get product by ID
 router.get("/:id", productController.getProductById);
 
-// Add product
-router.post("/", productController.addProduct);
+// Add product (admin only)
+router.post("/", authMiddleware, roleMiddleware(['admin']), productController.addProduct);
 
-// Update product
-router.put("/:id", productController.updateProduct);
+// Update product (admin only)
+router.put("/:id", authMiddleware, roleMiddleware(['admin']), productController.updateProduct);
 
-// Delete product
-router.delete("/:id", productController.deleteProduct);
+// Delete product (admin only)
+router.delete("/:id", authMiddleware, roleMiddleware(['admin']), productController.deleteProduct);
 
 module.exports = router;
 

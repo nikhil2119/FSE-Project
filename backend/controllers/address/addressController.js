@@ -1,4 +1,4 @@
-const db = require("../config/db");
+const db = require("../../config/db");
 
 // Utility function for sending error responses
 const sendErrorResponse = (res, status, message) => {

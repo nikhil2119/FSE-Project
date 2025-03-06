@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authMiddleware, adminMiddleware } = require('../middleware/authMiddleware');
+const { authMiddleware } = require('../middleware/authMiddleware');
+const roleMiddleware = require('../middleware/roleMiddleware');
 
 const { getAllCategories, createCategory, updateCategory, deleteCategory } = require('../controllers/categoryController');
 
@@ -8,9 +9,9 @@ const { getAllCategories, createCategory, updateCategory, deleteCategory } = req
 router.get('/', getAllCategories); // Allow public access to view categories
 
 // Protected admin routes
-router.post('/', [authMiddleware, adminMiddleware], createCategory);
-router.put('/:id', [authMiddleware, adminMiddleware], updateCategory);
-router.delete('/:id', [authMiddleware, adminMiddleware], deleteCategory);
+router.post('/', authMiddleware, roleMiddleware(['admin']), createCategory);
+router.put('/:id', authMiddleware, roleMiddleware(['admin']), updateCategory);
+router.delete('/:id', authMiddleware, roleMiddleware(['admin']), deleteCategory);
 
 module.exports = router;
 
