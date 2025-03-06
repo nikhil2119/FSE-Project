@@ -16,6 +16,7 @@ const stateRoutes = require('./routes/address/stateRoutes');
 const cityRoutes = require('./routes/address/cityRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const discountRoutes = require('./routes/discountRoutes');
+const productImageRoutes = require('./routes/productImageRoutes');
 
 // Middleware
 app.use(express.json());
@@ -41,6 +42,7 @@ app.use('/api/state', stateRoutes);
 app.use('/api/cities', cityRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/discounts', discountRoutes);
+app.use('/api/product-images', productImageRoutes);
 
 // Handle 404 routes
 app.use((req, res) => {

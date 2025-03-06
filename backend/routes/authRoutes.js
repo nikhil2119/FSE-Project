@@ -3,7 +3,7 @@ const router = express.Router();
 const authController = require('../controllers/authController');    
 
 // Public routes (no authentication required)
-router.post('/register', authController.register);
+router.post('/signup', authController.register);
 router.post('/login', authController.login);
 
 // Protected routes (require authentication)
