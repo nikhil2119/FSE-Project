@@ -29,15 +29,19 @@ const addImageForProduct = async (req, res) => {
         return sendErrorResponse(res, 400, "Product ID and Image Path are required");
     }
 
+    const date = new Date();
+    const formattedDate = date.toISOString().split('T')[0];
+
     try {
-        const [result] = await db.query("INSERT INTO Product_images (product_id, image_path) VALUES (?, ?)", [product_id, image_path]);
+        const [result] = await db.query("INSERT INTO Product_images (product_id, image_path, created_on) VALUES (?, ?, ?)", [product_id, image_path, formattedDate]);
         res.status(201).json({
             id: result.insertId,
             message: "Image added successfully",
             image: {
                 id: result.insertId,
                 product_id,
-                image_path
+                image_path,
+                created_on: formattedDate
             }
         });
     } catch (error) {

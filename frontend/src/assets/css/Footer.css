@@ -1,0 +1,20 @@
+/* Root Variables */
+:root {
+    --text-color: #ffffff;
+    --bg-dark: #111827;
+}
+
+/* Global Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+.footer-content {
+    background-color: var(--bg-dark);
+    color: var(--text-color);
+    padding: 20px 0;
+    text-align: center;
+}
