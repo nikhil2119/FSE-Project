@@ -1,23 +1,17 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const productController = require("../controllers/productController");
-const { authMiddleware } = require('../middleware/authMiddleware');
-const roleMiddleware = require('../middleware/roleMiddleware');
+const productController = require('../controllers/productController');
+const { authenticateUser, isAdmin } = require('../middleware/authMiddleware');
 
-// Get all products
-router.get("/", productController.getAllProducts);
+// Public routes
+router.get('/', productController.getAllProducts);
+router.get('/:id', productController.getProduct);
 
-// Get product by ID
-router.get("/:id", productController.getProductById);
-
-// Add product (admin only)
-router.post("/", authMiddleware, roleMiddleware(['admin']), productController.addProduct);
-
-// Update product (admin only)
-router.put("/:id", authMiddleware, roleMiddleware(['admin']), productController.updateProduct);
-
-// Delete product (admin only)
-router.delete("/:id", authMiddleware, roleMiddleware(['admin']), productController.deleteProduct);
+// Protected routes (admin only)
+router.post('/', authenticateUser, isAdmin, productController.createProduct);
+router.put('/:id', authenticateUser, isAdmin, productController.updateProduct);
+router.delete('/:id', authenticateUser, isAdmin, productController.deleteProduct);
+router.patch('/:id/stock', authenticateUser, isAdmin, productController.updateStock);
 
 module.exports = router;
 

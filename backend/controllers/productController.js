@@ -1,68 +1,195 @@
-const db = require("../config/db");
+const Product = require('../models/Product');
+const { Op } = require('sequelize');
 
-
-//get all products
-const getAllProducts = async (req, res) => {
+// Get all products with pagination and filters
+const getAllProducts = async (req, res, next) => {
   try {
-    const [products] = await db.query("SELECT * FROM master_products");
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      category,
+      subcategory,
+      minPrice,
+      maxPrice,
+      featured,
+      sort = 'created_on',
+      order = 'DESC'
+    } = req.query;
 
-    if(products.length === 0){
-      return res.status(404).json({ message: "No products found" });
+    const where = { is_enabled: true };
+    
+    if (search) {
+      where[Op.or] = [
+        { prod_name: { [Op.like]: `%${search}%` } },
+        { prod_desc: { [Op.like]: `%${search}%` } }
+      ];
     }
-    res.status(200).json(products);
+
+    if (category) where.cate_id = category;
+    if (subcategory) where.sub_cate_id = subcategory;
+    if (minPrice) where.prod_price = { [Op.gte]: minPrice };
+    if (maxPrice) where.prod_price = { ...where.prod_price, [Op.lte]: maxPrice };
+    if (featured) where.is_featured = featured === 'true';
+
+    const products = await Product.findAndCountAll({
+      where,
+      limit: parseInt(limit),
+      offset: (page - 1) * limit,
+      order: [[sort, order]],
+      paranoid: false
+    });
+
+    res.json({
+      status: 'success',
+      data: {
+        products: products.rows,
+        total: products.count,
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(products.count / limit)
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
-//get product by id 
-const getProductById = async (req, res) => {
-  const { id } = req.params;
-  const [product] = await db.query("SELECT * FROM master_products WHERE id = ?", [id]);
+// Get single product by ID or slug
+const getProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findOne({
+      where: {
+        [Op.or]: [
+          { id: id },
+          { slug: id }
+        ],
+        is_enabled: true
+      },
+      paranoid: false
+    });
 
-  if(product.length === 0){
-    return res.status(404).json({ message: "Product not found" });
+    if (!product) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Product not found'
+      });
+    }
+
+    res.json({
+      status: 'success',
+      data: product
+    });
+  } catch (error) {
+    next(error);
   }
-  res.status(200).json(product);
 };
 
-
-//add product   
-const addProduct = async (req, res) => {
-  const { cate_id, sub_cate_id, prod_name, prod_desc, prod_price, stock, created_on, created_by } = req.body;
-  const [result] = await db.query("INSERT INTO master_products (cate_id, sub_cate_id, prod_name, prod_desc, prod_price, stock, created_on, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [cate_id, sub_cate_id, prod_name, prod_desc, prod_price, stock, created_on, created_by]);
-
-  if(result.affectedRows === 0){
-    return res.status(404).json({ message: "Product not added" });
+// Create new product
+const createProduct = async (req, res, next) => {
+  try {
+    const product = await Product.create(req.body);
+    
+    res.status(201).json({
+      status: 'success',
+      data: product
+    });
+  } catch (error) {
+    next(error);
   }
-
-  res.status(201).json({ id: result.insertId, message: "Product added successfully" });
 };
 
-//update product
-const updateProduct = async (req, res) => {
-  const { id } = req.params;
-  const { cate_id, sub_cate_id, prod_name, prod_desc, prod_price, stock, created_on, created_by } = req.body;
-  const [result] = await db.query("UPDATE master_products SET cate_id = ?, sub_cate_id = ?, prod_name = ?, prod_desc = ?, prod_price = ?, stock = ?, created_on = ?, created_by = ? WHERE id = ?", [cate_id, sub_cate_id, prod_name, prod_desc, prod_price, stock, created_on, created_by, id]);
-  res.status(200).json({ id: result.insertId, message: "Product updated successfully"});
+// Update product
+const updateProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findByPk(id);
+
+    if (!product) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Product not found'
+      });
+    }
+
+    await product.update(req.body);
+
+    res.json({
+      status: 'success',
+      data: product
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-//delete product
-const deleteProduct = async (req, res) => {
-  const { id } = req.params;
-  const [result] = await db.query("DELETE FROM master_products WHERE id = ?", [id]);
+// Delete product (soft delete)
+const deleteProduct = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findByPk(id);
 
-  if(result.affectedRows === 0){
-    return res.status(404).json({ message: "Product not found" });
+    if (!product) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Product not found'
+      });
+    }
+
+    await product.destroy();
+
+    res.json({
+      status: 'success',
+      message: 'Product deleted successfully'
+    });
+  } catch (error) {
+    next(error);
   }
-  res.status(200).json({ id: result.insertId, message: "Product deleted successfully" });
+};
+
+// Update product stock
+const updateStock = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { quantity } = req.body;
+
+    const product = await Product.findByPk(id);
+
+    if (!product) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Product not found'
+      });
+    }
+
+    const newStock = product.stock + parseInt(quantity);
+    if (newStock < 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Insufficient stock'
+      });
+    }
+
+    await product.update({ stock: newStock });
+
+    res.json({
+      status: 'success',
+      data: {
+        product,
+        isLowStock: newStock <= product.low_stock_threshold
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports = {
   getAllProducts,
-  getProductById,
-  addProduct,
+  getProduct,
+  createProduct,
   updateProduct,
   deleteProduct,
+  updateStock
 };
 

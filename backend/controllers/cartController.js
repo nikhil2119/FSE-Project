@@ -1,35 +1,102 @@
-const db = require('../config/db');
+const { Cart, Product } = require('../models');
 
-//add to cart
+// Add to cart
 const addToCart = async (req, res) => {
-    const { user_id, product_id, quantity } = req.body;
-    const query = `INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)`;
-    const result = await db.query(query, [user_id, product_id, quantity]);
-    res.status(200).json({ message: 'Product added to cart' });
+    try {
+        const { product_id, quantity } = req.body;
+        const user_id = req.user.id;
+
+        // Check if product exists in cart
+        let cartItem = await Cart.findOne({
+            where: { user_id, product_id }
+        });
+
+        if (cartItem) {
+            // Update quantity if product already in cart
+            cartItem.quantity += parseInt(quantity);
+            await cartItem.save();
+        } else {
+            // Create new cart item
+            cartItem = await Cart.create({
+                user_id,
+                product_id,
+                quantity
+            });
+        }
+
+        res.status(200).json({
+            message: 'Product added to cart',
+            cartItem
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
-//get cart items
+// Get cart items
 const getCartItems = async (req, res) => {
-    const { user_id } = req.params;
-    const query = `SELECT * FROM cart WHERE user_id = ?`;
-    const result = await db.query(query, [user_id]);
-    res.status(200).json(result.rows);
-};     
+    try {
+        const user_id = req.user.id;
+        const cartItems = await Cart.findAll({
+            where: { user_id },
+            include: [{
+                model: Product,
+                attributes: ['id', 'prod_name', 'prod_price', 'image_path']
+            }]
+        });
 
-//update cart item
-const updateCartItem = async (req, res) => {
-    const { user_id, product_id, quantity } = req.body;
-    const query = `UPDATE cart SET quantity = ? WHERE user_id = ? AND product_id = ?`;
-    const result = await db.query(query, [quantity, user_id, product_id]);
-    res.status(200).json({ message: 'Cart item updated' });
+        res.status(200).json(cartItems);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
-//delete cart item
+// Update cart item
+const updateCartItem = async (req, res) => {
+    try {
+        const { product_id, quantity } = req.body;
+        const user_id = req.user.id;
+
+        const cartItem = await Cart.findOne({
+            where: { user_id, product_id }
+        });
+
+        if (!cartItem) {
+            return res.status(404).json({ message: 'Cart item not found' });
+        }
+
+        cartItem.quantity = quantity;
+        await cartItem.save();
+
+        res.status(200).json({
+            message: 'Cart item updated',
+            cartItem
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Delete cart item
 const deleteCartItem = async (req, res) => {
-    const { user_id, product_id } = req.params;
-    const query = `DELETE FROM cart WHERE user_id = ? AND product_id = ?`;
-    const result = await db.query(query, [user_id, product_id]);
-    res.status(200).json({ message: 'Cart item deleted' });
+    try {
+        const { product_id } = req.params;
+        const user_id = req.user.id;
+
+        const cartItem = await Cart.findOne({
+            where: { user_id, product_id }
+        });
+
+        if (!cartItem) {
+            return res.status(404).json({ message: 'Cart item not found' });
+        }
+
+        await cartItem.destroy();
+
+        res.status(200).json({ message: 'Cart item deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
 module.exports = { addToCart, getCartItems, updateCartItem, deleteCartItem };

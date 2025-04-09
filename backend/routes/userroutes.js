@@ -1,17 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const { authMiddleware } = require('../middleware/authMiddleware');
-const roleMiddleware = require('../middleware/roleMiddleware');
+const { authenticateUser, isAdmin } = require('../middleware/authMiddleware');
 
-// Protected routes (require authentication)
-router.get('/profile', authMiddleware, userController.getProfile);
-router.put('/profile', authMiddleware, userController.updateProfile);
+// Public routes
+router.post('/register', userController.register);
+router.post('/login', userController.login);
 
-// Admin only routes
-router.get('/', authMiddleware, roleMiddleware(['admin']), userController.getAllUsers);
-router.get('/:id', authMiddleware, roleMiddleware(['admin']), userController.getUserById);
-router.put('/:id', authMiddleware, roleMiddleware(['admin']), userController.updateUser);
-router.delete('/:id', authMiddleware, roleMiddleware(['admin']), userController.deleteUser);
+// Protected routes
+router.get('/me', authenticateUser, userController.getProfile);
+router.put('/me', authenticateUser, userController.updateProfile);
+
+// Admin routes
+router.get('/', authenticateUser, isAdmin, userController.getAllUsers);
+router.get('/search', authenticateUser, isAdmin, userController.searchUsers);
+router.get('/:id', authenticateUser, isAdmin, userController.getUserById);
+router.put('/:id', authenticateUser, isAdmin, userController.updateUser);
+router.delete('/:id', authenticateUser, isAdmin, userController.deleteUser);
 
 module.exports = router;

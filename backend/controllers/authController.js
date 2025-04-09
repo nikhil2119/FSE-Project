@@ -1,96 +1,184 @@
-const db = require("../config/db");
-const { generateToken } = require("../config/jwt");
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const User = require('../models/User');
+const Admin = require('../models/Admin');
+const AdminActivity = require('../models/AdminActivity');
 
-// Register user
+// User Authentication
 const register = async (req, res) => {
-    try {
-        const { user_name, user_email, user_pwd, user_age, phone } = req.body;
+  try {
+    const { name, email, password, phone } = req.body;
 
-        // Validate input
-        if (!user_name || !user_email || !user_pwd) {
-            return res.status(400).json({ message: 'Name, email and password are required' });
-        }
-
-        // Check if user already exists
-        const [existingUser] = await db.query('SELECT id FROM Users WHERE user_email = ?', [user_email]);
-        if (existingUser.length > 0) {
-            return res.status(400).json({ message: 'User with this email already exists' });
-        }
-
-        const date = new Date();
-        const created_on = date.toISOString().slice(0, 19).replace('T', ' ');
-
-        const [result] = await db.query(
-            'INSERT INTO Users (user_name, user_email, user_pwd, user_age, phone, created_on) VALUES (?, ?, ?, ?, ?, ?)',
-            [user_name, user_email, user_pwd, user_age, phone, created_on]
-        );
-
-        res.status(201).json({ id: result.insertId, message: 'User created successfully' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    // Check if user already exists
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
     }
+
+    // Create new user
+    const user = await User.create({
+      name,
+      email,
+      password,
+      phone
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, role: 'user' },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Error registering user' });
+  }
 };
 
-// Login user
 const login = async (req, res) => {
-    try {
-        const { user_email, user_pwd } = req.body;
+  try {
+    const { email, password } = req.body;
 
-        // Validate input
-        if (!user_email || !user_pwd) {
-            return res.status(400).json({ message: 'Email and password are required' });
-        }
-
-        const [result] = await db.query("SELECT * FROM Users WHERE user_email = ?", [user_email]);
-        
-        if (result.length === 0) {
-            return res.status(401).json({ message: "Invalid email or password" });
-        }
-
-        const user = result[0];
-        if (user.user_pwd !== user_pwd) {
-            return res.status(401).json({ message: "Invalid email or password" });
-        }
-
-        const token = generateToken(user.id);
-        res.status(200).json({ 
-            message: "Login successful", 
-            token,
-            user: {
-                id: user.id,
-                name: user.user_name,
-                email: user.user_email
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    // Find user
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    // Check password
+    const isValidPassword = await user.checkPassword(password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, role: 'user' },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Error logging in' });
+  }
 };
 
-// Get user profile
 const getProfile = async (req, res) => {
-    try {
-        const [user] = await db.query(
-            'SELECT id, user_name, user_email, user_age, phone, created_on FROM Users WHERE id = ?', 
-            [req.user.id]
-        );
-
-        if (user.length === 0) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        res.status(200).json(user[0]);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ message: 'Error fetching profile' });
+  }
 };
 
-// Logout user
-const logout = async (req, res) => {
-    res.status(200).json({ message: 'Logged out successfully' });
+// Admin Authentication
+const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find admin
+    const admin = await Admin.findOne({ where: { email } });
+    if (!admin) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isValidPassword = await admin.checkPassword(password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check if admin is enabled
+    if (!admin.is_enabled) {
+      return res.status(403).json({ message: 'Account is disabled' });
+    }
+
+    // Update last login
+    admin.last_login = new Date();
+    await admin.save();
+
+    // Log admin activity
+    await AdminActivity.create({
+      admin_id: admin.id,
+      action: 'LOGIN',
+      entity_type: 'ADMIN',
+      ip_address: req.ip,
+      user_agent: req.get('user-agent')
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: admin.id, role: admin.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      message: 'Login successful',
+      token,
+      admin: {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ message: 'Error logging in' });
+  }
 };
 
-module.exports = { register, login, getProfile, logout };
+const adminLogout = async (req, res) => {
+  try {
+    // Log admin activity
+    await AdminActivity.create({
+      admin_id: req.user.id,
+      action: 'LOGOUT',
+      entity_type: 'ADMIN',
+      ip_address: req.ip,
+      user_agent: req.get('user-agent')
+    });
+
+    res.json({ message: 'Logout successful' });
+  } catch (error) {
+    console.error('Admin logout error:', error);
+    res.status(500).json({ message: 'Error logging out' });
+  }
+};
+
+module.exports = { register, login, getProfile, adminLogin, adminLogout };
 
 
 

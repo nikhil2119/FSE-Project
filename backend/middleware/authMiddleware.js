@@ -1,29 +1,52 @@
-const jwt = require("jsonwebtoken");
-const { JWT_SECRET } = require("../config/jwt");
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-const authMiddleware = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: "No token provided. Please login first" });
-    }
-
-    const token = authHeader.split(' ')[1];
+// Middleware to authenticate user
+const authenticateUser = async (req, res, next) => {
+  try {
+    // Get token from header
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN format
     
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        return res.status(401).json({ message: "Invalid or expired token" });
+    if (!token) {
+      return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
-};
 
-const adminMiddleware = (req, res, next) => {   
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Your are not authorized to access this resource' });
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded) {
+      return res.status(401).json({ message: 'Invalid token.' });
     }
+    
+    // Check if user exists
+    const user = await User.findByPk(decoded.id);
+    if (!user || !user.is_enabled) {
+      return res.status(401).json({ message: 'Invalid token. User not found or disabled.' });
+    }
+
+    req.user = { id: user.id, role: user.role };
     next();
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return res.status(401).json({ message: 'Invalid token.' });
+  }
 };
 
-module.exports = { authMiddleware, adminMiddleware };
+// Middleware to check if user is an admin
+const isAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+  }
+  next();
+};
+
+// Middleware to check if user is a seller
+const isSeller = (req, res, next) => {
+  if (!req.user || req.user.role !== 'seller') {
+    return res.status(403).json({ message: 'Access denied. Seller privileges required.' });
+  }
+  next();
+};
+
+module.exports = { authenticateUser, isAdmin, isSeller };
 

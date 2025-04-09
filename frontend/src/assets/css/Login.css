@@ -1,0 +1,183 @@
+/* Login Page Styles */
+:root {
+  --primary-color: #6366f1;
+  --secondary-color: #4f46e5;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --bg-light: #ffffff;
+  --bg-dark: #111827;
+  --transition: all 0.3s ease;
+}
+
+/* Auth Container - Shared between Login and Register */
+.auth-container {
+  display: flex;
+  min-height: 100vh; /* Changed from calc to full viewport height */
+  margin: 0;
+  overflow: hidden;
+}
+
+.auth-left, .auth-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.auth-left {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo img {
+  max-width: 120px;
+  margin-bottom: 20px;
+}
+
+.logo h1 {
+  color: white;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0; /* Added to remove any default margins */
+}
+
+.auth-left p {
+  margin-top: 20px;
+  font-size: 1.1rem;
+  max-width: 80%;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.auth-right {
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+}
+
+.auth-right h2 {
+  margin-bottom: 30px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  text-align: center;
+  margin-top: 0; /* Added to remove any default margins */
+}
+
+.auth-right form {
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-right label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.auth-right input {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.auth-right input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.auth-right .btn-primary {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.auth-right .btn-primary:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-2px);
+}
+
+/* Link between login and register */
+.auth-link {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.auth-link a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-link a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .auth-container {
+    flex-direction: column;
+  }
+  
+  .auth-left, .auth-right {
+    width: 100%;
+    padding: 30px 20px;
+  }
+  
+  .auth-left {
+    min-height: 200px;
+  }
+  
+  .logo img {
+    max-width: 80px;
+  }
+  
+  .logo h1 {
+    font-size: 2rem;
+  }
+}
+
+/* Fix for any body/html margins */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Add this to your existing Login.css file */
+
+.auth-error {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Style for disabled buttons */
+.btn-primary:disabled {
+  background-color: #a5a6f6;
+  cursor: not-allowed;
+  transform: none;
+} 
