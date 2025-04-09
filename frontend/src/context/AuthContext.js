@@ -9,17 +9,15 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if user is logged in on initial load
-    const user = localStorage.getItem('user');
+    const user = api.getCurrentUser();
     if (user) {
-      setCurrentUser(JSON.parse(user));
+      setCurrentUser(user);
     }
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
     const data = await api.login(email, password);
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data.user || { email }));
     setCurrentUser(data.user || { email });
     return data;
   };
@@ -30,8 +28,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    api.logout();
     setCurrentUser(null);
   };
 
@@ -40,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    isAuthenticated: !!currentUser,
+    isAuthenticated: api.isAuthenticated(),
   };
 
   return (

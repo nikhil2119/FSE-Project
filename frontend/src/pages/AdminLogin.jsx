@@ -1,25 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FaLock, FaEnvelope, FaUser } from 'react-icons/fa';
 import api from '../services/api';
-import { login as loginAction } from '../features/auth/authSlice';
-import { FaLock, FaEnvelope } from 'react-icons/fa';
 
-const Login = () => {
-    const [user_email, setEmail] = useState('');
-    const [user_pwd, setPassword] = useState('');
+const AdminLogin = () => {
+    const [credentials, setCredentials] = useState({
+        admin_email: '',
+        admin_pwd: ''
+    });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const isLoggedIn = useSelector((state) => state.auth?.isLoggedIn);
 
-    // Redirect if already logged in
-    useEffect(() => {
-        if (isLoggedIn) {
-            navigate('/');
-        }
-    }, [isLoggedIn, navigate]);
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setCredentials(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -27,19 +26,19 @@ const Login = () => {
         setLoading(true);
         
         try {
-            // Call the login API with correct field names
-            const data = await api.login(user_email, user_pwd);
+            // Call admin login API
+            const _data = await api.adminLogin(credentials.admin_email, credentials.admin_pwd);
             
-            // Dispatch the login action to update Redux store
-            dispatch(loginAction({
-                user: data.user,
-                token: data.token
-            }));
+            // Check if user is admin
+            const admin = api.getCurrentUser();
+            if (!admin || admin.role !== 'admin') {
+                throw new Error('Unauthorized access. Admin privileges required.');
+            }
             
-            // Redirect to home page
-            navigate('/');
+            // Redirect to admin dashboard
+            navigate('/admin');
         } catch (err) {
-            setError(err.message);
+            setError(err.message || 'Login failed. Please check your credentials.');
         } finally {
             setLoading(false);
         }
@@ -48,14 +47,14 @@ const Login = () => {
     return (
         <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
+                <div className="flex justify-center">
+                    <FaUser className="h-12 w-12 text-blue-600" />
+                </div>
                 <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                    Sign in to your account
+                    Admin Login
                 </h2>
                 <p className="mt-2 text-center text-sm text-gray-600">
-                    Or{' '}
-                    <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-                        create a new account
-                    </Link>
+                    Secure access for administrators only
                 </p>
             </div>
 
@@ -78,7 +77,7 @@ const Login = () => {
                     
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div>
-                            <label htmlFor="user_email" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="admin_email" className="block text-sm font-medium text-gray-700">
                                 Email address
                             </label>
                             <div className="mt-1 relative rounded-md shadow-sm">
@@ -86,22 +85,22 @@ const Login = () => {
                                     <FaEnvelope className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <input
-                                    id="user_email"
-                                    name="user_email"
+                                    id="admin_email"
+                                    name="admin_email"
                                     type="email"
                                     autoComplete="email"
                                     required
                                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                    placeholder="you@example.com"
-                                    value={user_email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="admin@example.com"
+                                    value={credentials.admin_email}
+                                    onChange={handleChange}
                                     disabled={loading}
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label htmlFor="user_pwd" className="block text-sm font-medium text-gray-700">
+                            <label htmlFor="admin_pwd" className="block text-sm font-medium text-gray-700">
                                 Password
                             </label>
                             <div className="mt-1 relative rounded-md shadow-sm">
@@ -109,40 +108,17 @@ const Login = () => {
                                     <FaLock className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <input
-                                    id="user_pwd"
-                                    name="user_pwd"
+                                    id="admin_pwd"
+                                    name="admin_pwd"
                                     type="password"
                                     autoComplete="current-password"
                                     required
                                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                                     placeholder="••••••••"
-                                    value={user_pwd}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    value={credentials.admin_pwd}
+                                    onChange={handleChange}
                                     disabled={loading}
                                 />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <input
-                                    id="remember_me"
-                                    name="remember_me"
-                                    type="checkbox"
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                />
-                                <label htmlFor="remember_me" className="ml-2 block text-sm text-gray-900">
-                                    Remember me
-                                </label>
-                            </div>
-
-                            <div className="text-sm">
-                                <button 
-                                    className="font-medium text-blue-600 hover:text-blue-500 focus:outline-none"
-                                    onClick={() => alert('Password reset functionality will be implemented soon.')}
-                                >
-                                    Forgot your password?
-                                </button>
                             </div>
                         </div>
 
@@ -162,4 +138,4 @@ const Login = () => {
     );
 };
 
-export default Login;       
+export default AdminLogin; 

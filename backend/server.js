@@ -10,6 +10,7 @@ const { sequelize } = require('./models');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
+const sellerProductRoutes = require('./routes/sellerProductRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
@@ -42,6 +43,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/seller/products', sellerProductRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
@@ -55,7 +57,7 @@ app.use(errorHandler);
 sequelize.authenticate()
     .then(() => {
         console.log('Database connection has been established successfully.');
-        return sequelize.sync({ alter: true }); // Use { force: true } in development to recreate tables
+        return sequelize.sync(); // Removed the alter option to avoid deadlocks
     })
     .then(() => {
         const PORT = process.env.PORT || 5000;
